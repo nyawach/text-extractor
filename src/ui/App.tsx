@@ -1,88 +1,102 @@
-import { FC } from 'react'
+import { FC, ReactEventHandler, useEffect, useState } from 'react'
 import { ThemeProvider } from './ThemeProvider';
+import { Stack, Title, Checkbox, Button, List } from '@mantine/core'
+import { ExtractOption } from 'lib/extract';
 
 
-type CreateRectanglesMessageType = {
-    type: 'create-rectangles'
-    count: number
+type ExtractMessage = {
+    type: 'extract'
+    payload: ExtractOption
 }
 
-type CancelMessageType = {
+type CancelMessage = {
     type: 'cancel'
 }
 
-type MessageTypes = CreateRectanglesMessageType | CancelMessageType
-
-type PostMessagePayload = {
-    pluginMessage: MessageTypes
-}
+type Message = ExtractMessage | CancelMessage
 
 const NODE_TYPES: NodeType[] = [
-    'BOOLEAN_OPERATION',
-    'CODE_BLOCK',
-    'COMPONENT',
-    'COMPONENT_SET',
-    'CONNECTOR',
-    'DOCUMENT',
-    'ELLIPSE',
-    'EMBED',
-    'FRAME',
-    'GROUP',
-    'HIGHLIGHT',
-    'INSTANCE',
-    'LINE',
-    'LINK_UNFURL',
-    'MEDIA',
-    'PAGE',
-    'POLYGON',
-    'RECTANGLE',
-    'SECTION',
     'SHAPE_WITH_TEXT',
-    'SLICE',
-    'STAMP',
-    'STAR',
-    'STICKY',
     'TEXT',
-    'VECTOR',
-    'WASHI_TAPE',
-    'WIDGET',
 ]
 
-const TARGET_ORIGIN = '*'
+const postMessage = (message: Message) => {
+    const TARGET_ORIGIN = '*'
+    parent.postMessage({ pluginMessage: message }, TARGET_ORIGIN)
+}
 
 const App: FC = () => {
-    const handleClickCreate = () => {
-        const textbox = document.getElementById('count');
-        const count = parseInt((textbox as HTMLInputElement)?.value ?? '0', 10);
-        const payload: PostMessagePayload = {
-            pluginMessage: {
-                type: 'create-rectangles',
-                count,
-            },
-        }
-        parent.postMessage(payload, TARGET_ORIGIN)
+
+    const [isPrivate, setIsPrivate] = useState(false)
+    const handleCheckPrivate = () => {
+        setIsPrivate(!isPrivate)
     }
-    const handleClickCancel = () => {
-        const payload: PostMessagePayload = {
-            pluginMessage: { type: 'cancel' }
+
+    const [nodeTypes, setNodeTypes] = useState<string[]>([...NODE_TYPES])
+
+    const handleClickExtract = () => {
+        const message: ExtractMessage = {
+            type: 'extract',
+            payload: {
+                privateNode: isPrivate,
+                nodeTypes: nodeTypes as NodeType[],
+            }
         }
-        parent.postMessage(payload, TARGET_ORIGIN)
+        postMessage(message)
     }
+
+    const [texts, setTexts] = useState<string[]>([])
+    
+    const handleMessage = (evt: MessageEvent<{pluginMessage: { type: 'result', payload: {texts: string[]} }}>) => {
+        console.log(evt.data);
+        setTexts(evt.data.pluginMessage.payload.texts)
+    }
+
+    useEffect(() => {
+        window.addEventListener('message', handleMessage)
+        return () => {
+            window.removeEventListener('message', handleMessage)
+        }
+    }, [])
+
     return (
         <ThemeProvider>
-            <h2>Text Extractor</h2>
-            <button id="create" onClick={handleClickCreate}>Create</button>
-            <button id="cancel" onClick={handleClickCancel}>Cancel</button>
-            <ul>
-                {NODE_TYPES.map(nodeType => (
-                    <li>
-                        <label>
-                            <input type="checkbox" value={nodeType} />
-                            {nodeType}
-                        </label>
-                    </li>
-                ))}
-            </ul>
+            <Stack justify="flex-start" p="lg">
+                <Title order={1} mb="md">Text Extractor</Title>
+                <Stack>
+                    <Stack mb="md">
+                        <Checkbox
+                            onChange={handleCheckPrivate}
+                            checked={isPrivate}
+                            label="非表示の要素も抽出する"
+                        />
+                    </Stack>
+                    <Checkbox.Group
+                        orientation="vertical"
+                        label="対象の Data Types を選んでください"
+                        description="https://www.figma.com/plugin-docs/api/data-types"
+                        value={nodeTypes}
+                        onChange={setNodeTypes}
+                        offset="md"
+                    >
+                        {NODE_TYPES.map(nodeType => (
+                            <Checkbox value={nodeType} label={nodeType} />
+                        ))}
+                    </Checkbox.Group>
+                </Stack>
+                <Button onClick={handleClickExtract} mt="lg">Extract</Button>
+                {
+                    !!texts.length
+                        ? (
+                            <List>
+                                { texts.map(text => (
+                                    <List.Item>{text}</List.Item>
+                                )) }
+                            </List>
+                        )
+                        : null
+                }
+            </Stack>
         </ThemeProvider>
     )
 }
