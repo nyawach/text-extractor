@@ -1,4 +1,6 @@
 import { FC } from 'react'
+import { ThemeProvider } from './ThemeProvider';
+
 
 type CreateRectanglesMessageType = {
     type: 'create-rectangles'
@@ -67,7 +69,7 @@ const App: FC = () => {
         parent.postMessage(payload, TARGET_ORIGIN)
     }
     return (
-        <>
+        <ThemeProvider>
             <h2>Text Extractor</h2>
             <button id="create" onClick={handleClickCreate}>Create</button>
             <button id="cancel" onClick={handleClickCancel}>Cancel</button>
@@ -81,8 +83,7 @@ const App: FC = () => {
                     </li>
                 ))}
             </ul>
-
-        </>
+        </ThemeProvider>
     )
 }
 
