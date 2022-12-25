@@ -2,17 +2,27 @@ export type ExtractOption = {
     privateNode: boolean
 }
 
-export type Location = {
-    id: string
-    name: string
-    pageId: string
-    pageName: string
-}
-
 export type ExtractedData = {
     text: string
     locations: Location[]
 }
+
+export type Location = {
+    page: {
+        id: string
+        name: string
+    }
+    frame: {
+        id: string
+        name: string
+    }
+    node: {
+        id?: string
+        name: string
+    }
+}
+
+export type ExtractResultMesage = { type: 'result', payload: { data: ExtractedData[]} }
 
 export const extract = ({ privateNode }: ExtractOption) => {
     const targetNodeTypes: NodeType[] = ['TEXT', 'SHAPE_WITH_TEXT']
@@ -25,27 +35,40 @@ export const extract = ({ privateNode }: ExtractOption) => {
             : node.visible
         return shouldExtractPrivateNode
     }
-    const results: ExtractedData[] = []
+    const textMap = new Map<string, Location[]>()
     const pages = figma.root.findAllWithCriteria({ types: ['PAGE'] })
     pages.forEach(page => {
         const frames = page.findAllWithCriteria({ types: ['FRAME'] })
         frames.forEach(frame => {
             const nodes = frame.findAll(filterFn) as (TextNode | TextSublayerNode)[]
             nodes.forEach(node => {
-                const data: ExtractedData = {
-                    text: node.characters,
-                    locations: [
-                        {
-                            pageId: page.id,
-                            pageName: page.name,
-                            id: frame.id,
-                            name: frame.name,
-                        },
-                    ]
+                const text = node.characters
+                const location: Location = {
+                    page: {
+                        id: page.id,
+                        name: page.name,
+                    },
+                    frame: {
+                        id: frame.id,
+                        name: frame.name,
+                    },
+                    node: {
+                        id: (node as BaseNode).id,
+                        name: text,
+                    },
                 }
-                results.push(data)
+                const reference = textMap.get(text)
+                if (reference) {
+                    textMap.set(text, [...reference, location])
+                    return
+                }
+                textMap.set(text, [location])
             })
         })
     })
-    return Array.from(new Set([...results]))
+    const result: ExtractedData[] = Array.from(textMap.entries()).map(([text, locations]) => ({
+        text,
+        locations,
+    }))
+    return result
 }

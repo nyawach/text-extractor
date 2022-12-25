@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from 'react'
 import { ThemeProvider } from '~/ui/ThemeProvider';
 import { Stack, Title, Checkbox, Button, List, Anchor, Text } from '@mantine/core'
-import { ExtractedData } from '~/lib/extract';
+import { ExtractedData, ExtractResultMesage, Location } from '~/lib/extract';
 import { ExtractMessage, MessageEventFromFigma, postMessageToFigma, SelectMessage } from '~/lib/message';
 
 const App: FC = () => {
@@ -23,16 +23,15 @@ const App: FC = () => {
 
     const [extractedData, setExtractedData] = useState<ExtractedData[]>([])
     
-    type ExtractResultMesage = { type: 'result', payload: { data: ExtractedData[]} }
     const handleMessage = (evt: MessageEventFromFigma<ExtractResultMesage>) => {
         setExtractedData(evt.data.pluginMessage.payload.data)
     }
 
-    const handleClickAnchor = (nodeId: string, pageId: string) => {
+    const handleClickAnchor = ({ page: { id: pageId }, frame: {id: frameId}, node: { id: nodeId }}: Location) => {
         const message: SelectMessage = {
             type: 'select',
             payload: {
-                nodeId,
+                nodeId: nodeId || frameId,
                 pageId
             }
         }
@@ -71,7 +70,7 @@ const App: FC = () => {
                                             {
                                                 data.locations.map(location => (
                                                     <List.Item>
-                                                        <Anchor onClick={() => handleClickAnchor(location.id, location.pageId)}>{location.pageName} {'->'} {location.name}</Anchor>
+                                                        <Anchor onClick={() => handleClickAnchor(location)}>{location.page.name} {'->'} {location.frame.name} {'->'} {location.node.name}</Anchor>
                                                     </List.Item>
                                                 ))
                                             }
