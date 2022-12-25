@@ -3,6 +3,7 @@ import { ThemeProvider } from '~/ui/ThemeProvider';
 import { Stack, Title, Checkbox, Button, List, Anchor, Text } from '@mantine/core'
 import { ExtractedData, ExtractResultMesage, Location } from '~/lib/extract';
 import { ExtractMessage, MessageEventFromFigma, postMessageToFigma, SelectMessage } from '~/lib/message';
+import ExtractedDataTable from './ExtractDataTable';
 
 const App: FC = () => {
 
@@ -59,28 +60,7 @@ const App: FC = () => {
                     </Stack>
                 </Stack>
                 <Button onClick={handleClickExtract} mt="lg">Extract</Button>
-                {
-                    !!extractedData.length
-                        ? (
-                            <List>
-                                { extractedData.map(data => (
-                                    <List.Item>
-                                        <Text>{data.text}</Text>
-                                        <List>
-                                            {
-                                                data.locations.map(location => (
-                                                    <List.Item>
-                                                        <Anchor onClick={() => handleClickAnchor(location)}>{location.page.name} {'->'} {location.frame.name} {'->'} {location.node.name}</Anchor>
-                                                    </List.Item>
-                                                ))
-                                            }
-                                        </List>
-                                    </List.Item>
-                                )) }
-                            </List>
-                        )
-                        : null
-                }
+                <ExtractedDataTable data={extractedData} />
             </Stack>
         </ThemeProvider>
     )
