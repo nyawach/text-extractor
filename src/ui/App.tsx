@@ -1,33 +1,8 @@
-import { FC, ReactEventHandler, useEffect, useState } from 'react'
-import { ThemeProvider } from './ThemeProvider';
+import { FC, useEffect, useState } from 'react'
+import { ThemeProvider } from '~/ui/ThemeProvider';
 import { Stack, Title, Checkbox, Button, List, Anchor, Text } from '@mantine/core'
-import { ExtractedData, ExtractOption } from 'lib/extract';
-
-
-type ExtractMessage = {
-    type: 'extract'
-    payload: ExtractOption
-}
-
-type SelectMessage = {
-    type: 'select',
-    payload: {
-        nodeId: string
-        pageId: string
-    }
-}
-
-type Message = ExtractMessage | SelectMessage
-
-const NODE_TYPES: NodeType[] = [
-    'SHAPE_WITH_TEXT',
-    'TEXT',
-]
-
-const postMessage = (message: Message) => {
-    const TARGET_ORIGIN = '*'
-    parent.postMessage({ pluginMessage: message }, TARGET_ORIGIN)
-}
+import { ExtractedData } from '~/lib/extract';
+import { ExtractMessage, MessageEventFromFigma, postMessageToFigma, SelectMessage } from '~/lib/message';
 
 const App: FC = () => {
 
@@ -43,13 +18,13 @@ const App: FC = () => {
                 privateNode: isPrivate,
             }
         }
-        postMessage(message)
+        postMessageToFigma(message)
     }
 
     const [extractedData, setExtractedData] = useState<ExtractedData[]>([])
     
     type ExtractResultMesage = { type: 'result', payload: { data: ExtractedData[]} }
-    const handleMessage = (evt: MessageEvent<{pluginMessage: ExtractResultMesage }>) => {
+    const handleMessage = (evt: MessageEventFromFigma<ExtractResultMesage>) => {
         setExtractedData(evt.data.pluginMessage.payload.data)
     }
 
@@ -61,7 +36,7 @@ const App: FC = () => {
                 pageId
             }
         }
-        postMessage(message)
+        postMessageToFigma(message)
     }
 
     useEffect(() => {

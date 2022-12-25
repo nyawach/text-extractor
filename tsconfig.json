@@ -18,6 +18,9 @@
       "./node_modules/@types",
       "./node_modules/@figma"
     ],
+    "paths": {
+      "~/*": ["./*"]
+    }
   },
   "exclude": [
     "node_modules",
