@@ -8,13 +8,21 @@ figma.ui.resize(480, 640)
 
 figma.ui.onmessage = msg => {
   if (msg.type === 'extract') {
-    const texts = extract(msg.payload)
+    const extractedData = extract(msg.payload)
     figma.ui.postMessage({
       type: 'result',
       payload: {
-        texts,
+        data: extractedData,
       },
     })
     return
+  }
+  if (msg.type === 'select') {
+    const page = figma.root.findOne(node => node.type === 'PAGE' && node.id === msg.payload.pageId)
+    if (!page) return
+    figma.currentPage = page as PageNode
+    const node = figma.root.findOne(node => node.id === msg.payload.nodeId)
+    if (!node) return
+    figma.viewport.scrollAndZoomIntoView([node])
   }
 }

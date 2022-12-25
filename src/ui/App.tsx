@@ -1,7 +1,7 @@
 import { FC, ReactEventHandler, useEffect, useState } from 'react'
 import { ThemeProvider } from './ThemeProvider';
-import { Stack, Title, Checkbox, Button, List } from '@mantine/core'
-import { ExtractOption } from 'lib/extract';
+import { Stack, Title, Checkbox, Button, List, Anchor, Text } from '@mantine/core'
+import { ExtractedData, ExtractOption } from 'lib/extract';
 
 
 type ExtractMessage = {
@@ -9,11 +9,15 @@ type ExtractMessage = {
     payload: ExtractOption
 }
 
-type CancelMessage = {
-    type: 'cancel'
+type SelectMessage = {
+    type: 'select',
+    payload: {
+        nodeId: string
+        pageId: string
+    }
 }
 
-type Message = ExtractMessage | CancelMessage
+type Message = ExtractMessage | SelectMessage
 
 const NODE_TYPES: NodeType[] = [
     'SHAPE_WITH_TEXT',
@@ -32,24 +36,32 @@ const App: FC = () => {
         setIsPrivate(!isPrivate)
     }
 
-    const [nodeTypes, setNodeTypes] = useState<string[]>([...NODE_TYPES])
-
     const handleClickExtract = () => {
         const message: ExtractMessage = {
             type: 'extract',
             payload: {
                 privateNode: isPrivate,
-                nodeTypes: nodeTypes as NodeType[],
             }
         }
         postMessage(message)
     }
 
-    const [texts, setTexts] = useState<string[]>([])
+    const [extractedData, setExtractedData] = useState<ExtractedData[]>([])
     
-    const handleMessage = (evt: MessageEvent<{pluginMessage: { type: 'result', payload: {texts: string[]} }}>) => {
-        console.log(evt.data);
-        setTexts(evt.data.pluginMessage.payload.texts)
+    type ExtractResultMesage = { type: 'result', payload: { data: ExtractedData[]} }
+    const handleMessage = (evt: MessageEvent<{pluginMessage: ExtractResultMesage }>) => {
+        setExtractedData(evt.data.pluginMessage.payload.data)
+    }
+
+    const handleClickAnchor = (nodeId: string, pageId: string) => {
+        const message: SelectMessage = {
+            type: 'select',
+            payload: {
+                nodeId,
+                pageId
+            }
+        }
+        postMessage(message)
     }
 
     useEffect(() => {
@@ -71,26 +83,25 @@ const App: FC = () => {
                             label="非表示の要素も抽出する"
                         />
                     </Stack>
-                    <Checkbox.Group
-                        orientation="vertical"
-                        label="対象の Data Types を選んでください"
-                        description="https://www.figma.com/plugin-docs/api/data-types"
-                        value={nodeTypes}
-                        onChange={setNodeTypes}
-                        offset="md"
-                    >
-                        {NODE_TYPES.map(nodeType => (
-                            <Checkbox value={nodeType} label={nodeType} />
-                        ))}
-                    </Checkbox.Group>
                 </Stack>
                 <Button onClick={handleClickExtract} mt="lg">Extract</Button>
                 {
-                    !!texts.length
+                    !!extractedData.length
                         ? (
                             <List>
-                                { texts.map(text => (
-                                    <List.Item>{text}</List.Item>
+                                { extractedData.map(data => (
+                                    <List.Item>
+                                        <Text>{data.text}</Text>
+                                        <List>
+                                            {
+                                                data.locations.map(location => (
+                                                    <List.Item>
+                                                        <Anchor onClick={() => handleClickAnchor(location.id, location.pageId)}>{location.pageName} {'->'} {location.name}</Anchor>
+                                                    </List.Item>
+                                                ))
+                                            }
+                                        </List>
+                                    </List.Item>
                                 )) }
                             </List>
                         )
