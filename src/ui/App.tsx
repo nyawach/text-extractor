@@ -28,17 +28,6 @@ const App: FC = () => {
         setExtractedData(evt.data.pluginMessage.payload.data)
     }
 
-    const handleClickAnchor = ({ page: { id: pageId }, frame: {id: frameId}, node: { id: nodeId }}: Location) => {
-        const message: SelectMessage = {
-            type: 'select',
-            payload: {
-                nodeId: nodeId || frameId,
-                pageId
-            }
-        }
-        postMessageToFigma(message)
-    }
-
     useEffect(() => {
         window.addEventListener('message', handleMessage)
         return () => {
