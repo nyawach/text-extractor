@@ -114,7 +114,7 @@ const App: FC = () => {
                 </Stack>
                 <Button onClick={handleClickExtract} loading={isLoading} mt="lg">Extract</Button>
                 {!!extractedData.length && (
-                    <Button onClick={downloadJson} mt="lg">Download</Button>
+                    <Button onClick={downloadJson} loading={isLoading} mt="lg">Download</Button>
                 )}
             </Stack>
         </ThemeProvider>
