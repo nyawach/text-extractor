@@ -1,5 +1,6 @@
 export type ExtractOption = {
     privateNode: boolean
+    pageIds: string[]
 }
 
 export type ExtractedData = {
@@ -22,9 +23,7 @@ export type Location = {
     }
 }
 
-export type ExtractResultMesage = { type: 'result', payload: { data: ExtractedData[]} }
-
-export const extract = ({ privateNode }: ExtractOption) => {
+export const extract = ({ privateNode, pageIds }: ExtractOption) => {
     const targetNodeTypes: NodeType[] = ['TEXT', 'SHAPE_WITH_TEXT']
     const filterFn = (node: SceneNode) => {
         if (!targetNodeTypes.includes(node.type)) {
@@ -36,7 +35,7 @@ export const extract = ({ privateNode }: ExtractOption) => {
         return shouldExtractPrivateNode
     }
     const textMap = new Map<string, Location[]>()
-    const pages = figma.root.findAllWithCriteria({ types: ['PAGE'] })
+    const pages = figma.root.findAll(node => node.type === 'PAGE' && pageIds.includes(node.id)) as PageNode[]
     pages.forEach(page => {
         const frames = page.findAllWithCriteria({ types: ['FRAME'] })
         frames.forEach(frame => {
