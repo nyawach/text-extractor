@@ -3,7 +3,6 @@ import { ThemeProvider } from '~/ui/ThemeProvider';
 import { Stack, Title, Checkbox, Button } from '@mantine/core'
 import { ExtractedData } from '~/lib/extract';
 import { ExtractMessage, ExtractResultMesage, LoadPagesMessage, MessageEventFromFigma, PagesMessage, postMessageToFigma } from '~/lib/message';
-import ExtractedDataTable from './ExtractDataTable';
 
 const App: FC = () => {
 
@@ -66,6 +65,15 @@ const App: FC = () => {
     }
 
     const [selectedPageIds, selectPageIds] = useState<string[]>([])
+    const isAllChecked = selectedPageIds.length === pages.length
+    const isAnyChecked = !!selectedPageIds.length
+    const togglePages = () => {
+        if (isAllChecked) {
+            selectPageIds([])
+        } else {
+            selectPageIds(pages.map(page => page.id))
+        }
+    }
     const handleCheckPage = (id: string) => {
         const set = new Set(selectedPageIds)
         if (set.has(id)) {
@@ -86,21 +94,24 @@ const App: FC = () => {
                 <Title order={1} mb="md">Text Extractor</Title>
                 {
                     !!pages.length && (
-                        <Checkbox.Group value={selectedPageIds} mb="lg">
-                            <Stack justify="flex-start">
-                                {
+                        <Stack justify="flex-start">
+                            <Checkbox
+                                onChange={togglePages}
+                                checked={isAllChecked}
+                                label="全選択"
+                            />
+                            <Checkbox.Group value={selectedPageIds} mb="lg">
+                                <Stack justify="flex-start">{
                                     pages.map((page => (
-                                        <Stack>
-                                            <Checkbox
-                                                onClick={() => handleCheckPage(page.id)}
-                                                value={page.id}
-                                                label={page.name}
-                                            />
-                                        </Stack>
+                                        <Checkbox
+                                            onClick={() => handleCheckPage(page.id)}
+                                            value={page.id}
+                                            label={page.name}
+                                        />
                                     )))
-                                }
-                            </Stack>
-                        </Checkbox.Group>
+                                }</Stack>
+                            </Checkbox.Group>
+                        </Stack>
                     )
                 }
                 <Stack>
@@ -112,7 +123,7 @@ const App: FC = () => {
                         />
                     </Stack>
                 </Stack>
-                <Button onClick={handleClickExtract} loading={isLoading} mt="lg">Extract</Button>
+                <Button onClick={handleClickExtract} disabled={!isAnyChecked} loading={isLoading} mt="lg">Extract</Button>
                 {!!extractedData.length && (
                     <Button onClick={downloadJson} loading={isLoading} mt="lg">Download</Button>
                 )}
