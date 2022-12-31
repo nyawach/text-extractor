@@ -12,6 +12,8 @@ const App: FC = () => {
         setIsPrivate(!isPrivate)
     }
 
+    const [isLoading, setIsLoading] = useState(false)
+
     const handleClickExtract = () => {
         const message: ExtractMessage = {
             type: 'extract',
@@ -20,6 +22,7 @@ const App: FC = () => {
                 pageIds: selectedPageIds,
             },
         }
+        setIsLoading(true)
         postMessageToFigma(message)
     }
 
@@ -31,6 +34,7 @@ const App: FC = () => {
         switch(evt.data.pluginMessage.type) {
             case 'result':
                 setExtractedData(evt.data.pluginMessage.payload.data)
+                setIsLoading(false)
                 return
             case 'pages':
                 setPages(evt.data.pluginMessage.payload.data)
@@ -82,7 +86,7 @@ const App: FC = () => {
                 <Title order={1} mb="md">Text Extractor</Title>
                 {
                     !!pages.length && (
-                        <Checkbox.Group value={selectedPageIds}>
+                        <Checkbox.Group value={selectedPageIds} mb="lg">
                             <Stack justify="flex-start">
                                 {
                                     pages.map((page => (
@@ -108,7 +112,7 @@ const App: FC = () => {
                         />
                     </Stack>
                 </Stack>
-                <Button onClick={handleClickExtract} mt="lg">Extract</Button>
+                <Button onClick={handleClickExtract} loading={isLoading} mt="lg">Extract</Button>
                 {!!extractedData.length && (
                     <Button onClick={downloadJson} mt="lg">Download</Button>
                 )}
