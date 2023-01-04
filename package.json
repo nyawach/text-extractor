@@ -9,7 +9,8 @@
     "dev": "run-p dev:*",
     "build:ui": "vite build --config=vite.ui.config.ts --mode=production",
     "build:code": "vite build --config=vite.code.config.ts --mode=production",
-    "build": "run-p build:*"
+    "build": "run-p build:*",
+    "zip": "zip dist -r dist"
   },
   "author": "",
   "license": "",
