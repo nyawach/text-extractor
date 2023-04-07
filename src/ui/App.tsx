@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 import { ThemeProvider } from '~/ui/ThemeProvider';
-import { Stack, Title, Checkbox, Button } from '@mantine/core'
+import { Stack, Title, Checkbox, Button, Code } from '@mantine/core'
 import { ExtractedData } from '~/lib/extract';
 import { ExtractMessage, ExtractResultMesage, LoadPagesMessage, MessageEventFromFigma, PagesMessage, postMessageToFigma } from '~/lib/message';
 
@@ -57,11 +57,16 @@ const App: FC = () => {
 
     const downloadJson = () => {
         const a = document.createElement('a')
-        const blob = new Blob([JSON.stringify(extractedData, null, '  ')], {type: 'application\/json'})
+        const blob = new Blob([JSON.stringify(filteredExtractedData, null, '  ')], {type: 'application\/json'})
         const url = URL.createObjectURL(blob)
         a.download = 'text.json'
         a.href = url
         a.click()
+    }
+
+    const  [showJson, setShowJson] = useState(false)
+    const onChangeShowJson: React.ChangeEventHandler<HTMLInputElement> = () => {
+        setShowJson(old => !old)
     }
 
     const [selectedPageIds, selectPageIds] = useState<string[]>([])
@@ -86,7 +91,41 @@ const App: FC = () => {
         ])
     }
 
-    const[showExtractedData, setShowExtractedData] = useState(false)
+    const locationColumns = (extractedData.length ? Object.keys(extractedData[0].locations[0]) : []) as (keyof Location)[]
+    const [columns, setColumns] = useState<(keyof Location)[]>([...locationColumns])
+    const handleCheckColumn = (id: keyof Location) => {
+        const set = new Set(columns)
+        if (set.has(id)) {
+            set.delete(id)
+        } else {
+            set.add(id)
+        }
+        setColumns([
+            ...Array.from(set),
+        ])
+    }
+
+    const isKeyof = (d: object, key: string): key is keyof typeof d =>{
+        return key in d
+    }
+
+    const filteredExtractedData = extractedData.map(d => ({
+        text: d.text,
+        locations: d.locations.flatMap(l => {
+            if (!columns.length) {
+                return []
+            }
+            return columns.reduce((acc, key) => {
+                if (isKeyof(l, key)) {
+                    return {
+                        ...acc,
+                        [key]: l[key],
+                    }
+                }
+                return acc
+            }, {} as Partial<Location>)
+        })
+    }))
 
     return (
         <ThemeProvider>
@@ -125,7 +164,24 @@ const App: FC = () => {
                 </Stack>
                 <Button onClick={handleClickExtract} disabled={!isAnyChecked} loading={isLoading} mt="lg">Extract</Button>
                 {!!extractedData.length && (
-                    <Button onClick={downloadJson} loading={isLoading} mt="lg">Download</Button>
+                    <>
+                        <Checkbox.Group value={columns} mb="lg">
+                            <Stack justify="flex-start">{
+                                locationColumns.map((column => (
+                                    <Checkbox
+                                        onClick={() => handleCheckColumn(column)}
+                                        value={column}
+                                        label={column}
+                                    />
+                                )))
+                            }</Stack>
+                        </Checkbox.Group>
+                        <Checkbox defaultChecked={showJson} onChange={onChangeShowJson} label="JSONを表示する" />
+                        {showJson && (
+                            <Code block>{JSON.stringify(filteredExtractedData, null, 2)}</Code>
+                        )}
+                        <Button onClick={downloadJson} loading={isLoading} mt="lg">Download</Button>
+                    </>
                 )}
             </Stack>
         </ThemeProvider>
