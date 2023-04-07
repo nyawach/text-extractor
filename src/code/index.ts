@@ -7,7 +7,7 @@ figma.skipInvisibleInstanceChildren = true
 
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__);
-figma.ui.resize(480, 640)
+figma.ui.resize(320, 480)
 
 figma.ui.onmessage = (msg: Message) => {
   switch(msg.type) {
